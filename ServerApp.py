@@ -81,7 +81,22 @@ class EveryNetServer(BaseHTTPRequestHandler):
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
     def do_POST(self):
-        pass
+        print("path: ", self.path)
+        host = self.headers.get("Host")
+
+        if not host or host.count('.') >= 3:
+            self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
+        elif host.count('.') == 1:
+            self.wfile.write("<h1> EveryNetServer Homepage </h1>".encode("utf-8"))
+        else:
+            username = host.split('.')[0]
+            print(username)
+            user = self.get_user(username)
+            if user:
+                # trying to connect user server
+                self.wfile.write(f"<h1> Test EveryNetServer server {user[1]} </h1>".encode("utf-8"))
+            else:
+                self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
     
 
 
