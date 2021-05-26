@@ -1,4 +1,5 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlparse, parse_qs
 import MySQLdb
 import secrets
 
@@ -73,10 +74,23 @@ class EveryNetServer(BaseHTTPRequestHandler):
 
         if not host or host.count('.') >= 3:
             self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
-        elif host.count('.') <= 1:
-            self._set_response()
-            self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
 
+        elif host.count('.') <= 1:
+            if self.path == "/":
+                self._set_response()
+                self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
+            elif "/sign-up" in self.path:
+                query_components = parse_qs(urlparse(self.path).query)
+                username = query_components['username'][0]
+                print(username)
+                try:
+                    self.add_user(username)
+                    self._set_response()
+                    self.wfile.write("<h1> Successfully created! </h1>".encode("utf-8"))
+                except Exception as ex:
+                    print(str(type(ex)), str(ex))
+                    self._set_response()
+                    self.wfile.write("<h1 style='color: red'> Error in user creation :( </h1>".encode("utf-8"))
         else:
             username = host.split('.')[0]
             print(username)
@@ -93,9 +107,9 @@ class EveryNetServer(BaseHTTPRequestHandler):
 
         if not host or host.count('.') >= 3:
             self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
-        elif host.count('.') == 1:
+        elif host.count('.') <= 1:
             self._set_response()
-            self.wfile.write("<h1> EveryNetServer Homepage </h1>".encode("utf-8"))
+            self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
         else:
             username = host.split('.')[0]
             print(username)
