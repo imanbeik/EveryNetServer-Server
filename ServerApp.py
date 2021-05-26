@@ -33,7 +33,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
         mycursor.execute(
             f'''create table if not exists users(
                 id int primary key auto_increment,
-                username varchar(255),
+                username varchar(255) not null unique,
                 access_token varchar(255)
                 )
             '''
