@@ -8,7 +8,12 @@ MYSQL_PASSWORD = ''
 MYSQL_DB_NAME = 'everynetserver'
 
 
+def file_get_contents(name):
+    return open(name, encoding="utf-8").read()
+
+
 class EveryNetServer(BaseHTTPRequestHandler):
+
     def get_database_connection(self):
         '''connects to the MySQL database and returns the connection'''
         return MySQLdb.connect(
@@ -70,7 +75,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
             self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
         elif host.count('.') <= 1:
             self._set_response()
-            self.wfile.write("<h1> EveryNetServer Homepage </h1>".encode("utf-8"))
+            self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
 
         else:
             username = host.split('.')[0]

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ثبت نام</title>
+</head>
+<style>
+    * {
+        font-family: Arial, serif;
+    }
+
+    body {
+        background-color: #eeeeee;
+    }
+
+    .card {
+        width: 95vmin;
+        height: 95vmin;
+        border-radius: 14px;
+        box-shadow: 0 0 15px 3px #7d7d7d55;
+        position: absolute;
+        background-color: #ffffff;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        direction: rtl;
+    }
+
+    form {
+        font-size: 18px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    form > * {
+        display: block;
+        margin: 10px auto;
+    }
+
+    form > input[type='text'] {
+        font-size: 18px;
+    }
+
+    form > input[type='submit'] {
+        color: white;
+        padding: 10px 18px;
+        background-color: #1976D2;
+        border: none;
+        box-shadow: 3px 3px 10px 2px #7d7d7d55;
+        outline: none;
+        border-radius: 5px;
+    }
+
+
+    form > input[type='submit']:hover {
+        background-color: #1565c0;
+        box-shadow: 3px 3px 10px 4px #7d7d7d99;
+    }
+
+    div > div {
+        margin-top: 20px;
+        color: #263238;
+        font-size: 25px;
+        font-weight: bold;
+    }
+</style>
+<body>
+<div class="card">
+    <div>EveryNet Sign-Up</div>
+    <form action="./sign-up" method="get" onsubmit="return checkInput()">
+        لطفا یک نام کاربری وارد کنید:
+        <input id="username" type="text" name="username" pattern="[A-Za-z]">
+        <input type="submit" value="ثبت نام">
+    </form>
+</div>
+<script>
+    function checkInput() {
+        let username = document.getElementById("username").value;
+        if (username==''||username.length < 0) {
+            alert("لطفا نامی وارد کنید.")
+            return false
+        } else if (username.includes(" ")) {
+            alert("لطفا نامی بدون فاصله وارد کنید.")
+            return false
+        }
+    }
+</script>
+</body>
+</html>
