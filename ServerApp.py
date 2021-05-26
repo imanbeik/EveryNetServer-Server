@@ -7,17 +7,18 @@ MYSQL_USERNAME = 'root'
 MYSQL_PASSWORD = ''
 MYSQL_DB_NAME = 'everynetserver'
 
+
 class EveryNetServer(BaseHTTPRequestHandler):
     def get_database_connection(self):
         '''connects to the MySQL database and returns the connection'''
         return MySQLdb.connect(
-                host=MYSQL_HOST,
-                user=MYSQL_USERNAME,
-                passwd=MYSQL_PASSWORD,
-                db=MYSQL_DB_NAME,
-                charset='utf8mb4'
-            )
-    
+            host=MYSQL_HOST,
+            user=MYSQL_USERNAME,
+            passwd=MYSQL_PASSWORD,
+            db=MYSQL_DB_NAME,
+            charset='utf8mb4'
+        )
+
     def create_user_table_if_not_exists(self):
         mydb = self.get_database_connection()
         mycursor = mydb.cursor()
@@ -29,7 +30,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                 )
             '''
         )
-    
+
     def get_user(self, username):
         self.create_user_table_if_not_exists()
         # add sample user
@@ -37,7 +38,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
             self.add_user("sara")
         except Exception as ex:
             print(str(type(ex)), str(ex))
-        
+
         mydb = self.get_database_connection()
         mycursor = mydb.cursor()
         mycursor.execute(f"select * from users where username='{username}'")
@@ -47,7 +48,6 @@ class EveryNetServer(BaseHTTPRequestHandler):
         else:
             return None
 
-    
     def add_user(self, username):
         self.create_user_table_if_not_exists()
         access_token = secrets.token_hex()
@@ -59,17 +59,19 @@ class EveryNetServer(BaseHTTPRequestHandler):
 
     def _set_response(self):
         self.send_response(200)
-        self.send_headers("Content-type", "text/html")
+        self.send_header("Content-type", "text/html")
         self.end_headers()
-        
+
     def do_GET(self):
         print("path: ", self.path)
         host = self.headers.get("Host")
 
         if not host or host.count('.') >= 3:
             self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
-        elif host.count('.') == 1:
+        elif host.count('.') <= 1:
+            self._set_response()
             self.wfile.write("<h1> EveryNetServer Homepage </h1>".encode("utf-8"))
+
         else:
             username = host.split('.')[0]
             print(username)
@@ -87,6 +89,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
         if not host or host.count('.') >= 3:
             self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
         elif host.count('.') == 1:
+            self._set_response()
             self.wfile.write("<h1> EveryNetServer Homepage </h1>".encode("utf-8"))
         else:
             username = host.split('.')[0]
@@ -97,12 +100,11 @@ class EveryNetServer(BaseHTTPRequestHandler):
                 self.wfile.write(f"<h1> Test EveryNetServer server {user[1]} </h1>".encode("utf-8"))
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
-    
 
 
 if __name__ == "__main__":
 
-    HOST = '' #127.0.0.1
+    HOST = ''  # 127.0.0.1
     PORT = int(input("Enter Server Port: "))
 
     server_handler = HTTPServer((HOST, PORT), EveryNetServer)
