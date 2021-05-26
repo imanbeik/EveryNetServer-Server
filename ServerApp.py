@@ -2,6 +2,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 import MySQLdb
 import secrets
+import json
+import os
 
 MYSQL_HOST = '127.0.0.1'
 MYSQL_USERNAME = 'root'
@@ -72,13 +74,14 @@ class EveryNetServer(BaseHTTPRequestHandler):
         print("path: ", self.path)
         host = self.headers.get("Host")
 
-        if not host or host.count('.') >= 3:
+        if not host:
             self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
 
         elif host.count('.') <= 1:
             if self.path == "/":
                 self._set_response()
-                self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
+                signup_html = os.path.dirname(__file__)+"/signup.html"
+                self.wfile.write(file_get_contents(signup_html).encode("utf-8"))
             elif "/sign-up" in self.path:
                 query_components = parse_qs(urlparse(self.path).query)
                 username = query_components['username'][0]
@@ -92,11 +95,19 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     self._set_response()
                     self.wfile.write("<h1 style='color: red'> Error in user creation :( </h1>".encode("utf-8"))
         else:
-            username = host.split('.')[0]
+            username = host.split('.')[-3]
             print(username)
             user = self.get_user(username)
             if user:
-                # trying to connect user server
+                full_request = {}
+                headers = {}
+                print(str(type(self.headers)))
+                for k, v in self.headers.items():
+                    headers[k] = v
+                full_request["headers"] = headers
+                full_request["path"] = self.path
+                full_request["method"] = "GET"
+                full_request_json = json.dumps(full_request)
                 self.wfile.write(f"<h1> Test EveryNetServer server {user[1]} </h1>".encode("utf-8"))
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
@@ -105,17 +116,25 @@ class EveryNetServer(BaseHTTPRequestHandler):
         print("path: ", self.path)
         host = self.headers.get("Host")
 
-        if not host or host.count('.') >= 3:
+        if not host:
             self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
         elif host.count('.') <= 1:
             self._set_response()
             self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
         else:
-            username = host.split('.')[0]
+            username = host.split('.')[-3]
             print(username)
             user = self.get_user(username)
             if user:
-                # trying to connect user server
+                full_request = {}
+                headers = {}
+                print(str(type(self.headers)))
+                for k, v in self.headers.items():
+                    headers[k] = v
+                full_request["headers"] = headers
+                full_request["path"] = self.path
+                full_request["method"] = "POST"
+                full_request_json = json.dumps(full_request)
                 self.wfile.write(f"<h1> Test EveryNetServer server {user[1]} </h1>".encode("utf-8"))
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
