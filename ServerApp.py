@@ -5,11 +5,19 @@ import MySQLdb
 import secrets
 import json
 import os
+import asyncio
+import websockets
+import threading
 
 MYSQL_HOST = '127.0.0.1'
 MYSQL_USERNAME = 'root'
 MYSQL_PASSWORD = ''
 MYSQL_DB_NAME = 'everynetserver'
+
+
+async def websocket_handler(websocket, path):
+    async for message in websocket:
+        await websocket.send("your message:" + message)
 
 
 def file_get_contents(name):
@@ -152,17 +160,20 @@ class EveryNetServer(BaseHTTPRequestHandler):
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
 
-if __name__ == "__main__":
-
-    HOST = ''  # 127.0.0.1
-    PORT = int(input("Enter Server Port: "))
-
-    server_handler = HTTPServer((HOST, PORT), EveryNetServer)
-
+def start_http():
+    server_handler = HTTPServer(('', 80), EveryNetServer)
     try:
+        print("HttpServer Started")
         server_handler.serve_forever()
     except KeyboardInterrupt:
         pass
 
     server_handler.server_close()
     print("Server Stopped")
+
+
+if __name__ == "__main__":
+    threading.Thread(target=start_http).start()
+    start_server = websockets.serve(websocket_handler, '', 8765)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
