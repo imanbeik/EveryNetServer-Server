@@ -13,7 +13,8 @@ MYSQL_DB_NAME = 'everynetserver'
 
 
 def file_get_contents(name):
-    return open(name, encoding="utf-8").read()
+    with open(name, encoding="utf-8") as f:
+        return f.read()
 
 
 class EveryNetServer(BaseHTTPRequestHandler):
