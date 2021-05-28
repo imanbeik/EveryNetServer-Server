@@ -1,3 +1,4 @@
+import cgi
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 import MySQLdb
@@ -80,7 +81,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
         elif host.count('.') <= 1:
             if self.path == "/":
                 self._set_response()
-                signup_html = os.path.dirname(__file__)+"/signup.html"
+                signup_html = os.path.dirname(__file__) + "/signup.html"
                 self.wfile.write(file_get_contents(signup_html).encode("utf-8"))
             elif "/sign-up" in self.path:
                 query_components = parse_qs(urlparse(self.path).query)
@@ -128,12 +129,22 @@ class EveryNetServer(BaseHTTPRequestHandler):
             if user:
                 full_request = {}
                 headers = {}
+                params = {}
                 print(str(type(self.headers)))
                 for k, v in self.headers.items():
                     headers[k] = v
                 full_request["headers"] = headers
                 full_request["path"] = self.path
                 full_request["method"] = "POST"
+
+                ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
+                if ctype == 'multipart/form-data':
+                    params = cgi.parse_multipart(self.rfile, pdict)
+                elif ctype == 'application/x-www-form-urlencoded':
+                    length = int(self.headers.get('content-length'))
+                    params = cgi.parse(self.rfile.read(length))
+                full_request["params"] = params
+
                 full_request_json = json.dumps(full_request)
                 self.wfile.write(f"<h1> Test EveryNetServer server {user[1]} </h1>".encode("utf-8"))
             else:
