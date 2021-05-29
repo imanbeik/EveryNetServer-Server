@@ -178,14 +178,15 @@ class EveryNetServer(BaseHTTPRequestHandler):
                             break
                         if (datetime.datetime.now() - now).seconds > 15:
                             raise Exception("Not responding")
-                    # self.send_response(response_dict[rid]["code"])
-                    # for header in response_dict[rid]["headers"]:
-                    #     self.send_header(header)
-                    # self.end_headers()
-                    self._set_response()
+                    
+                    self.send_response(response_dict[rid]["code"])
+                    for head, value in response_dict[rid]["headers"].items():
+                        self.send_header(head, value)
+                    self.end_headers()
+                    
                     self.wfile.write(response_dict[rid]["text"].encode("utf-8"))
-                    print(response_dict[rid]["text"])
                     del response_dict[rid]
+
                 except Exception as ex:
                     print(str(type(ex)), str(ex))
                     self._set_response()
@@ -236,13 +237,15 @@ class EveryNetServer(BaseHTTPRequestHandler):
                             break
                         if (datetime.datetime.now() - now).seconds > 6:
                             raise Exception("Not responding")
-                    # self.send_response(response_dict[rid]["code"])
-                    # for header in response_dict[rid]["headers"]:
-                    #     self.send_header(header)
-                    # self.end_headers()
-                    self._set_response()
-                    self.wfile.write(response_dict[rid]["text"])
+                    
+                    self.send_response(response_dict[rid]["code"])
+                    for head, value in response_dict[rid]["headers"].items():
+                        self.send_header(head, value)
+                    self.end_headers()
+
+                    self.wfile.write(response_dict[rid]["text"].encode("utf-8"))
                     del response_dict[rid]
+
                 except Exception as e:
                     print(str(type(e)) + " " + str(e))
                     self._set_response()
