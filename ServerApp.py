@@ -37,10 +37,10 @@ async def websocket_handler(websocket, path):
                                              "data": f"You are successfully connected, your site is available on: 'http://{user[1]}.everynetserver.ga''"}))
             onlineUsers.add(User(websocket, user[1], user[2]))
         async for message in websocket:
-            print(message)
+            #print(message)
             response_json = message
             response = json.loads(response_json)
-            response_dict[response[id]] = response
+            response_dict[response["id"]] = response
 
     if not token or not user:
         await websocket.send(json.dumps({"type": "alert", "data": "You are disconnected!"}))
@@ -176,16 +176,18 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     while True:
                         if response_dict.get(rid):
                             break
-                        if (datetime.datetime.now() - now).seconds > 2:
+                        if (datetime.datetime.now() - now).seconds > 15:
                             raise Exception("Not responding")
                     # self.send_response(response_dict[rid]["code"])
                     # for header in response_dict[rid]["headers"]:
                     #     self.send_header(header)
                     # self.end_headers()
                     self._set_response()
-                    self.wfile.write(response_dict[rid]["text"])
+                    self.wfile.write(response_dict[rid]["text"].encode("utf-8"))
+                    print(response_dict[rid]["text"])
                     del response_dict[rid]
-                except:
+                except Exception as ex:
+                    print(str(type(ex)), str(ex))
                     self._set_response()
                     self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
             else:
@@ -232,7 +234,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     while True:
                         if response_dict.get(rid):
                             break
-                        if (datetime.datetime.now() - now).seconds > 2:
+                        if (datetime.datetime.now() - now).seconds > 6:
                             raise Exception("Not responding")
                     # self.send_response(response_dict[rid]["code"])
                     # for header in response_dict[rid]["headers"]:
@@ -241,7 +243,8 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     self._set_response()
                     self.wfile.write(response_dict[rid]["text"])
                     del response_dict[rid]
-                except:
+                except Exception as e:
+                    print(str(type(e)) + " " + str(e))
                     self._set_response()
                     self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
 
