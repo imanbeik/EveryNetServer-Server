@@ -166,7 +166,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     asyncio.run(user.ws.send(full_request_json))
                     now = datetime.datetime.now()
                     while True:
-                        if response_dict[rid]:
+                        if response_dict.get(rid):
                             break
                         if (datetime.datetime.now() - now).seconds > 2:
                             raise Exception("Not responding")
@@ -215,10 +215,10 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     asyncio.run(user.ws.send(full_request_json))
                     now = datetime.datetime.now()
                     while True:
-                        if response_dict[rid]:
+                        if response_dict.get(rid):
                             break
                         if (datetime.datetime.now() - now).seconds > 2:
-                            raise Exeption("Not responding")
+                            raise Exception("Not responding")
                     self.wfile.write(response_dict[rid]["text"])
                     del response_dict[rid]
                 except:
