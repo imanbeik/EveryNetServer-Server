@@ -11,8 +11,8 @@ import threading
 import datetime
 
 MYSQL_HOST = '127.0.0.1'
-MYSQL_USERNAME = 'root'
-MYSQL_PASSWORD = ''
+MYSQL_USERNAME = 'root2'
+MYSQL_PASSWORD = '1234'
 MYSQL_DB_NAME = 'everynetserver'
 onlineUsers = set()
 response_dict = {}
@@ -37,6 +37,7 @@ async def websocket_handler(websocket, path):
                                              "data": f"You are successfully connected, your site is available on: 'http://{user[1]}.everynetserver.ga''"}))
             onlineUsers.add(User(websocket, user[1], user[2]))
         async for message in websocket:
+            print(message)
             response_json = message
             response = json.loads(response_json)
             response_dict[response[id]] = response
@@ -45,7 +46,10 @@ async def websocket_handler(websocket, path):
         await websocket.send(json.dumps({"type": "alert", "data": "You are disconnected!"}))
 
     # remove user after disconnect
-    onlineUsers = [user for user in onlineUsers if user.ws != websocket]
+    for user in onlineUsers:
+        if user.ws == websocket:
+            onlineUsers.remove(user)
+            break
 
 
 def get_online_user(name):
@@ -116,6 +120,7 @@ def add_user(username):
     mycursor.execute(f"insert into users(username, access_token) values('{username}', '{access_token}')")
     mydb.commit()
     mydb.close()
+    return access_token
 
 
 class EveryNetServer(BaseHTTPRequestHandler):
@@ -142,9 +147,9 @@ class EveryNetServer(BaseHTTPRequestHandler):
                 username = query_components['username'][0]
                 print(username)
                 try:
-                    add_user(username)
+                    token = add_user(username)
                     self._set_response()
-                    self.wfile.write("<h1> Successfully created! </h1>".encode("utf-8"))
+                    self.wfile.write(f"<h1> Successfully created! your token: <br> {token} </h1>".encode("utf-8"))
                 except Exception as ex:
                     print(str(type(ex)), str(ex))
                     self._set_response()
@@ -181,6 +186,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     self.wfile.write(response_dict[rid]["text"])
                     del response_dict[rid]
                 except:
+                    self._set_response()
                     self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
@@ -235,6 +241,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     self.wfile.write(response_dict[rid]["text"])
                     del response_dict[rid]
                 except:
+                    self._set_response()
                     self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
 
             else:
@@ -242,7 +249,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
 
 
 def start_http():
-    server_handler = HTTPServer(('', 80), EveryNetServer)
+    server_handler = HTTPServer(('', 85), EveryNetServer)
     try:
         print("HttpServer Started")
         server_handler.serve_forever()
