@@ -17,6 +17,7 @@ MYSQL_DB_NAME = 'everynetserver'
 onlineUsers = set()
 response_dict = {}
 
+
 class User:
     def __init__(self, ws, username, access_token):
         self.ws = ws
@@ -32,15 +33,17 @@ async def websocket_handler(websocket, path):
     if token:
         user = get_user_by_token(token)
         if user:
+            await websocket.send(json.dumps({"type": "alert",
+                                             "data": f"You are successfully connected, your site is available on: 'http://{user[1]}.everynetserver.ga''"}))
             onlineUsers.add(User(websocket, user[1], user[2]))
         async for message in websocket:
             response_json = message
             response = json.loads(response_json)
             response_dict[response[id]] = response
-    
+
     if not token or not user:
         await websocket.send(json.dumps({"type": "alert", "data": "You are disconnected!"}))
-    
+
     # remove user after disconnect
     onlineUsers = [user for user in onlineUsers if user.ws != websocket]
 
@@ -170,6 +173,11 @@ class EveryNetServer(BaseHTTPRequestHandler):
                             break
                         if (datetime.datetime.now() - now).seconds > 2:
                             raise Exception("Not responding")
+                    # self.send_response(response_dict[rid]["code"])
+                    # for header in response_dict[rid]["headers"]:
+                    #     self.send_header(header)
+                    # self.end_headers()
+                    self._set_response()
                     self.wfile.write(response_dict[rid]["text"])
                     del response_dict[rid]
                 except:
@@ -219,11 +227,16 @@ class EveryNetServer(BaseHTTPRequestHandler):
                             break
                         if (datetime.datetime.now() - now).seconds > 2:
                             raise Exception("Not responding")
+                    # self.send_response(response_dict[rid]["code"])
+                    # for header in response_dict[rid]["headers"]:
+                    #     self.send_header(header)
+                    # self.end_headers()
+                    self._set_response()
                     self.wfile.write(response_dict[rid]["text"])
                     del response_dict[rid]
                 except:
                     self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
-                
+
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
