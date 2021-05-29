@@ -141,7 +141,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
             if self.path == "/":
                 self._set_response()
                 signup_html = os.path.dirname(__file__) + "/signup.html"
-                self.wfile.write(file_get_contents(signup_html).encode("utf-8"))
+                self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
             elif "/sign-up" in self.path:
                 query_components = parse_qs(urlparse(self.path).query)
                 username = query_components['username'][0]
@@ -189,6 +189,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     self._set_response()
                     self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
             else:
+                self._set_response()
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
     def do_POST(self):
@@ -245,6 +246,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
 
             else:
+                self._set_response()
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
 
