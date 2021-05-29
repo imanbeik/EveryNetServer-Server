@@ -42,6 +42,13 @@ async def websocket_handler(websocket, path):
             onlineUsers.remove(user)
 
 
+def get_online_user(name):
+    for user in onlineUsers:
+        if user.username == name:
+            return user
+    return None
+
+
 def file_get_contents(name):
     with open(name, encoding="utf-8") as f:
         return f.read()
@@ -112,7 +119,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
 
-    def do_GET(self):
+    async def do_GET(self):
         print("path: ", self.path)
         host = self.headers.get("Host")
 
@@ -139,7 +146,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
         else:
             username = host.split('.')[-3]
             print(username)
-            user = get_user(username)
+            user = get_online_user(username)
             if user:
                 full_request = {}
                 headers = {}
@@ -149,12 +156,14 @@ class EveryNetServer(BaseHTTPRequestHandler):
                 full_request["headers"] = headers
                 full_request["path"] = self.path
                 full_request["method"] = "GET"
-                full_request_json = json.dumps(full_request)
-                self.wfile.write(f"<h1> Test EveryNetServer server {user[1]} </h1>".encode("utf-8"))
+
+                full_request_json = json.dumps({"type": "request", "data": full_request})
+                asyncio.get_event_loop().run_until_complete(user.ws.send(full_request_json))
+                self.wfile.write(f"<h1> Test EveryNetServer server {user.username} </h1>".encode("utf-8"))
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
-    def do_POST(self):
+    async def do_POST(self):
         print("path: ", self.path)
         host = self.headers.get("Host")
 
@@ -166,7 +175,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
         else:
             username = host.split('.')[-3]
             print(username)
-            user = get_user(username)
+            user = get_online_user(username)
             if user:
                 full_request = {}
                 headers = {}
@@ -186,8 +195,9 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     params = cgi.parse(self.rfile.read(length))
                 full_request["params"] = params
 
-                full_request_json = json.dumps(full_request)
-                self.wfile.write(f"<h1> Test EveryNetServer server {user[1]} </h1>".encode("utf-8"))
+                full_request_json = json.dumps({"type": "request", "data": full_request})
+                asyncio.get_event_loop().run_until_complete(user.ws.send(full_request_json))
+                self.wfile.write(f"<h1> Test EveryNetServer server {user.username} </h1>".encode("utf-8"))
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
