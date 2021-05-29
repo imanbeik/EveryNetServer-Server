@@ -8,13 +8,14 @@ import os
 import asyncio
 import websockets
 import threading
+import datetime
 
 MYSQL_HOST = '127.0.0.1'
 MYSQL_USERNAME = 'root'
 MYSQL_PASSWORD = ''
 MYSQL_DB_NAME = 'everynetserver'
 onlineUsers = set()
-
+response_dict = {}
 
 class User:
     def __init__(self, ws, username, access_token):
@@ -32,7 +33,11 @@ async def websocket_handler(websocket, path):
         user = get_user_by_token(token)
         if user:
             onlineUsers.add(User(websocket, user[1], user[2]))
-
+        async for message in websocket:
+            response_json = message
+            response = json.loads(response_json)
+            response_dict[response[id]] = response
+    
     if not token or not user:
         await websocket.send(json.dumps({"type": "alert", "data": "You are disconnected!"}))
     
@@ -154,10 +159,21 @@ class EveryNetServer(BaseHTTPRequestHandler):
                 full_request["headers"] = headers
                 full_request["path"] = self.path
                 full_request["method"] = "GET"
-
+                rid = secrets.token_hex()
+                full_request["id"] = rid
                 full_request_json = json.dumps({"type": "request", "data": full_request})
-                asyncio.get_event_loop().run_until_complete(user.ws.send(full_request_json))
-                self.wfile.write(f"<h1> Test EveryNetServer server {user.username} </h1>".encode("utf-8"))
+                try:
+                    asyncio.run(user.ws.send(full_request_json))
+                    now = datetime.datetime.now()
+                    while True:
+                        if response_dict[rid]:
+                            break
+                        if (datetime.datetime.now() - now).seconds > 2:
+                            raise Exception("Not responding")
+                    self.wfile.write(response_dict[rid]["text"])
+                    del response_dict[rid]
+                except:
+                    self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
@@ -192,14 +208,19 @@ class EveryNetServer(BaseHTTPRequestHandler):
                     length = int(self.headers.get('content-length'))
                     params = cgi.parse(self.rfile.read(length))
                 full_request["params"] = params
-
+                rid = secrets.token_hex()
+                full_request["id"] = rid
                 full_request_json = json.dumps({"type": "request", "data": full_request})
                 try:
-                    asyncio.wait_for(user.ws.send(full_request_json), timeout=2)
-                    response_json = None
-                    asyncio.wait_for(response_json = user.ws.recv(), timeout=2)
-                    response = json.loads(response_json)
-                    self.wfile.write(response['text'].encode("utf-8"))
+                    asyncio.run(user.ws.send(full_request_json))
+                    now = datetime.datetime.now()
+                    while True:
+                        if response_dict[rid]:
+                            break
+                        if (datetime.datetime.now() - now).seconds > 2:
+                            raise Exeption("Not responding")
+                    self.wfile.write(response_dict[rid]["text"])
+                    del response_dict[rid]
                 except:
                     self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
                 
