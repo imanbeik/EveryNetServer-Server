@@ -24,6 +24,8 @@ class User:
 
 
 async def websocket_handler(websocket, path):
+    global onlineUsers
+    
     token = websocket.request_headers.get('access_token')
     user = None
     if token:
@@ -37,9 +39,7 @@ async def websocket_handler(websocket, path):
         await websocket.send(json.dumps({"type": "alert", "data": "You are disconnected!"}))
 
     # remove user after disconnect
-    for user in onlineUsers:
-        if user.ws == websocket:
-            onlineUsers.remove(user)
+    onlineUsers = [user for user in onlineUsers if user.ws != websocket]
 
 
 def get_online_user(name):
