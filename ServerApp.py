@@ -25,19 +25,17 @@ class User:
 
 async def websocket_handler(websocket, path):
     global onlineUsers
-    
+
     token = websocket.request_headers.get('access_token')
     user = None
     if token:
         user = get_user_by_token(token)
         if user:
             onlineUsers.add(User(websocket, user[1], user[2]))
-            async for message in websocket:
-                await websocket.send("your message:" + message)
 
     if not token or not user:
         await websocket.send(json.dumps({"type": "alert", "data": "You are disconnected!"}))
-
+    
     # remove user after disconnect
     onlineUsers = [user for user in onlineUsers if user.ws != websocket]
 
@@ -119,7 +117,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
 
-    async def do_GET(self):
+    def do_GET(self):
         print("path: ", self.path)
         host = self.headers.get("Host")
 
@@ -163,7 +161,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
-    async def do_POST(self):
+    def do_POST(self):
         print("path: ", self.path)
         host = self.headers.get("Host")
 
@@ -196,8 +194,15 @@ class EveryNetServer(BaseHTTPRequestHandler):
                 full_request["params"] = params
 
                 full_request_json = json.dumps({"type": "request", "data": full_request})
-                asyncio.get_event_loop().run_until_complete(user.ws.send(full_request_json))
-                self.wfile.write(f"<h1> Test EveryNetServer server {user.username} </h1>".encode("utf-8"))
+                try:
+                    asyncio.wait_for(user.ws.send(full_request_json), timeout=2)
+                    response_json = None
+                    asyncio.wait_for(response_json = user.ws.recv(), timeout=2)
+                    response = json.loads(response_json)
+                    self.wfile.write(response['text'].encode("utf-8"))
+                except:
+                    self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
+                
             else:
                 self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
 
