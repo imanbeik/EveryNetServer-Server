@@ -9,6 +9,7 @@ import asyncio
 import websockets
 import threading
 import datetime
+import base64
 
 MYSQL_HOST = '127.0.0.1'
 MYSQL_USERNAME = 'root2'
@@ -34,7 +35,7 @@ async def websocket_handler(websocket, path):
         user = get_user_by_token(token)
         if user:
             await websocket.send(json.dumps({"type": "alert",
-                                             "data": f"You are successfully connected, your site is available on: 'http://{user[1]}.everynetserver.ga''"}))
+                                             "data": f"You are successfully connected, your site is available on: 'http://{user[1]}.everynetserver.ga'"}))
             onlineUsers.add(User(websocket, user[1], user[2]))
         async for message in websocket:
             #print(message)
@@ -184,7 +185,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                         self.send_header(head, value)
                     self.end_headers()
                     
-                    self.wfile.write(response_dict[rid]["text"].encode("utf-8"))
+                    self.wfile.write(base64.b64decode(response_dict[rid]["content"].encode("ascii")))
                     del response_dict[rid]
 
                 except Exception as ex:
@@ -206,7 +207,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
             self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
         else:
             username = host.split('.')[-3]
-            print(username)
+            print('Request =>', username)
             user = get_online_user(username)
             if user:
                 full_request = {}
@@ -243,7 +244,7 @@ class EveryNetServer(BaseHTTPRequestHandler):
                         self.send_header(head, value)
                     self.end_headers()
 
-                    self.wfile.write(response_dict[rid]["text"].encode("utf-8"))
+                    self.wfile.write(base64.b64decode(response_dict[rid]["content"].encode("ascii")))
                     del response_dict[rid]
 
                 except Exception as e:
