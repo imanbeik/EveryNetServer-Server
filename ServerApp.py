@@ -1,5 +1,4 @@
 import cgi
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
 import traceback
 from urllib.parse import urlparse, parse_qs
@@ -125,141 +124,6 @@ def add_user(username):
     return access_token
 
 
-class EveryNetServer(BaseHTTPRequestHandler):
-
-    def _set_response(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-
-    def do_GET(self):
-        host = self.headers.get("Host")
-        print("HostPath: ", f"{host}{self.path}")
-
-        if not host:
-            self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
-
-        elif host.count('.') <= 1:
-            if self.path == "/":
-                self._set_response()
-                signup_html = os.path.dirname(__file__) + "/signup.html"
-                self.wfile.write(file_get_contents(signup_html).encode("utf-8"))
-            elif "/sign-up" in self.path:
-                query_components = parse_qs(urlparse(self.path).query)
-                username = query_components['username'][0]
-                print("Register for", username)
-                try:
-                    token = add_user(username)
-                    self._set_response()
-                    self.wfile.write(f"<h1> Successfully created! your token: <br> {token} </h1>".encode("utf-8"))
-                except Exception as ex:
-                    print("Error:", str(type(ex)), str(ex))
-                    self._set_response()
-                    self.wfile.write("<h1 style='color: red'> Error in user creation :( </h1>".encode("utf-8"))
-        else:
-            username = host.split('.')[-3]
-            user = get_online_user(username)
-
-            if user:
-                full_request = {}
-                headers = {}
-                
-                for k, v in self.headers.items():
-                    headers[k] = v
-                
-                full_request["headers"] = headers
-                full_request["path"] = self.path
-                full_request["method"] = "GET"
-                rid = secrets.token_hex()
-                full_request["id"] = rid
-                full_request_json = json.dumps({"type": "request", "data": full_request})
-                try:
-                    asyncio.run(user.ws.send(full_request_json))
-                    now = datetime.datetime.now()
-                    while True:
-                        if response_dict.get(rid):
-                            break
-                        time.sleep(0.1)
-                        if (datetime.datetime.now() - now).seconds > 5:
-                            raise Exception("Not responding")
-                    
-                    self.send_response(response_dict[rid]["code"])
-                    for head, value in response_dict[rid]["headers"].items():
-                        self.send_header(head, value)
-                    self.end_headers()
-                    
-                    self.wfile.write(base64.b64decode(response_dict[rid]["content"].encode("ascii")))
-                    del response_dict[rid]
-
-                except Exception as ex:
-                    print("Error:", str(type(ex)) + " " + str(ex))
-                    self._set_response()
-                    self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
-            else:
-                self._set_response()
-                self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
-
-    def do_POST(self):
-        host = self.headers.get("Host")
-        print("HostPath: ", f"{host}{self.path}")
-
-        if not host:
-            self.wfile.write("<h1> Error, requested page not found </h1>".encode("utf-8"))
-        elif host.count('.') <= 1:
-            self._set_response()
-            self.wfile.write(file_get_contents("./signup.html").encode("utf-8"))
-        else:
-            username = host.split('.')[-3]
-            user = get_online_user(username)
-            if user:
-                full_request = {}
-                headers = {}
-                params = {}
-                
-                for k, v in self.headers.items():
-                    headers[k] = v
-                
-                full_request["headers"] = headers
-                full_request["path"] = self.path
-                full_request["method"] = "POST"
-
-                ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
-                if ctype == 'multipart/form-data':
-                    params = cgi.parse_multipart(self.rfile, pdict)
-                elif ctype == 'application/x-www-form-urlencoded':
-                    length = int(self.headers.get('content-length'))
-                    params = cgi.parse(self.rfile.read(length))
-                full_request["params"] = params
-                rid = secrets.token_hex()
-                full_request["id"] = rid
-                full_request_json = json.dumps({"type": "request", "data": full_request})
-                try:
-                    asyncio.run(user.ws.send(full_request_json))
-                    now = datetime.datetime.now()
-                    while True:
-                        if response_dict.get(rid):
-                            break
-                        if (datetime.datetime.now() - now).seconds > 6:
-                            raise Exception("Not responding")
-                    
-                    self.send_response(response_dict[rid]["code"])
-                    for head, value in response_dict[rid]["headers"].items():
-                        self.send_header(head, value)
-                    self.end_headers()
-
-                    self.wfile.write(base64.b64decode(response_dict[rid]["content"].encode("ascii")))
-                    del response_dict[rid]
-
-                except Exception as e:
-                    print("Error:", str(type(e)) + " " + str(e))
-                    self._set_response()
-                    self.wfile.write(f"<h1> There is a problem in {user.username} </h1>".encode("utf-8"))
-
-            else:
-                self._set_response()
-                self.wfile.write("<h1> Error, requested server not found </h1>".encode("utf-8"))
-
-
 async def catch_all(request):
     host = request.headers.get("Host", "")
     print("HostPath: ", f"{host}{request.path}")
@@ -358,18 +222,6 @@ async def catch_all(request):
             return web.Response(text="<h1> Error, requested server not found </h1>", content_type="text/html")
 
 
-def start_http():
-    server_handler = HTTPServer(('', 80), EveryNetServer)
-    try:
-        print("HttpServer Started")
-        server_handler.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-    server_handler.server_close()
-    print("Server Stopped")
-
-
 async def websocket_starter():
     try:
         async with websockets.serve(websocket_handler, "", 8080):
@@ -383,7 +235,6 @@ def websocket_thread_handler():
     asyncio.run(websocket_starter())
 
 if __name__ == "__main__":
-    # threading.Thread(target=start_http).start()
 
     threading.Thread(target=websocket_thread_handler).start()
     
